@@ -1,11 +1,12 @@
 import json
 import openai
+from datetime import date
 import requests
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 from termcolor import colored
 import os
 
-GPT_MODEL = "gpt-3.5-turbo-0613"
+GPT_MODEL = "gpt-3.5-turbo-1106"
 openai.api_key = os.environ['OPENAI_API_KEY']
 
 tools = [
@@ -19,11 +20,11 @@ tools = [
                 "properties": {
                     "start": {
                         "type": "string",
-                        "description": "The start date and time of the workout, e.g. 2023-11-19T22:12:49-05:00",
+                        "description": "The start date and time of the workout",
                     },
                     "end": {
                         "type": "string",
-                        "description": "The end date and time of the workout, e.g. 2023-11-19T22:12:49-05:00",
+                        "description": "The end date and time of the workout",
                     },
                     "name": {
                         "type": "string",
@@ -90,13 +91,15 @@ def pretty_print_conversation(messages):
             print(colored(f"function ({message['name']}): {message['content']}\n", role_to_color[message["role"]]))
 
 messages = []
-messages.append({"role": "system", "content": "Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous."})
-messages.append({"role": "user", "content": "Please create a new workout, start date will be 2023-11-19T22:12:49-05:00, the end date will be 2023-11-19T22:12:49-05:00, the intensity will be high, call it Long Run"})
+today = date.today()
+messages.append({"role": "system", "content": f"Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous. Today is {today}"})
+messages.append({"role": "user", "content": "I need to get ready for marathon next week, please create me multiple workouts to train for it."})
 chat_response = chat_completion_request(
     messages, tools=tools
 )
 assistant_message = chat_response.json()["choices"][0]["message"]
 messages.append(assistant_message)
+
 pretty_print_conversation(messages)
-print(chat_response.json()["choices"][0])
+print(chat_response.json()["choices"])
 
